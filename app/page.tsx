@@ -1,66 +1,179 @@
+'use client'
 import Image from "next/image";
+import {createContext, useState, useEffect } from 'react'
+import { PartyTheme, PartyThemes, PartyAddOn, PartyAddOns, CakeFlavor, CakeFlavors} from './common'
+import { useParty } from "./contexts/PartyContext";
 
+interface PartyFormData {
+  darkMode: boolean,
+  name: string;
+  partyTheme: PartyTheme;
+  newAge: number;
+  partyAddOns: PartyAddOn[];
+  cakeFlavor: CakeFlavor;
+}
 export default function Home() {
+
+  const { partyData, updatePartyData } = useParty();
+
+  const [formData, setFormData] = useState<PartyFormData>({
+    darkMode: partyData.darkMode ?? false,
+    name: partyData.name ?? "",
+    partyTheme: partyData.partyTheme ?? "SHRIMP",
+    newAge: partyData.newAge ?? 100,
+    partyAddOns: partyData.partyAddOns ?? [],
+    cakeFlavor: partyData.cakeFlavor ?? "VANILLA",
+  });
+
+  const handleSubmit = (e: React.SubmitEvent) => {
+    e.preventDefault();
+    // Update global party context on submit
+    updatePartyData(formData);
+    console.log("Updated Party Context:", formData);
+
+    // Optionally navigate to next step (e.g., photobooth)
+    // router.push("/photobooth");
+  };
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value, type } = e.target;
+
+    if (name === "partyAddOns") {
+      const val = e.target.value as PartyAddOns;
+      setFormData((prev) => {
+        const alreadySelected = prev.partyAddOns.includes(val);
+        return {
+          ...prev,
+          partyAddOns: alreadySelected
+            ? prev.partyAddOns.filter((a) => a !== val)
+            : [...prev.partyAddOns, val],
+        };
+      });
+    } else if (type === "checkbox") {
+      const checked = e.target.checked;
+      setFormData((prev) => ({ ...prev, [name]: checked }));
+    } else if (type === "number") {
+      setFormData((prev) => ({ ...prev, [name]: Number(value) }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
       <h1>Welcome to your virtual birthday party!</h1>
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      <div className={`min-h-screen p-4 ${formData.darkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900"}`}>
+      <form
+        onSubmit={handleSubmit}
+        className="max-w-md mx-auto p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md flex flex-col gap-5"
+      >
+        <h2 className="text-2xl font-bold mb-4">🎉 Birthday Party Form</h2>
+
+        {/* Dark mode toggle */}
+        <label className="flex items-center gap-3">
+          <input
+            type="checkbox"
+            name="darkMode"
+            checked={formData.darkMode}
+            onChange={handleChange}
+            className="h-5 w-5"
+          />
+          Dark Mode
+        </label>
+
+        {/* Name input */}
+        <label className="flex flex-col">
+          Name:
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            className="mt-1 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            placeholder="Enter your name"
+            required
+          />
+        </label>
+
+        {/* Party Theme dropdown */}
+        <label className="flex flex-col">
+          Party Theme:
+          <select
+            name="partyTheme"
+            value={formData.partyTheme}
+            onChange={handleChange}
+            className="mt-1 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            {PartyThemes.map((theme) => (
+              <option key={theme} value={theme}>
+                {theme}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {/* Age number selector */}
+        <label className="flex flex-col">
+          New Age:
+          <input
+            type="number"
+            name="newAge"
+            value={formData.newAge}
+            onChange={handleChange}
+            className="mt-1 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            min={0}
+            max={150}
+          />
+        </label>
+
+        {/* Party Add-Ons multi-select (checkboxes) */}
+        <fieldset>
+          <legend className="mb-1 font-medium">Party Add-Ons:</legend>
+          <div className="flex flex-col gap-1">
+            {PartyAddOns.map((addOn) => (
+              <label key={addOn} className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  name="partyAddOns"
+                  value={addOn}
+                  checked={formData.partyAddOns.includes(addOn)}
+                  onChange={handleChange}
+                  className="h-4 w-4"
+                />
+                {addOn}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        {/* Cake Flavor dropdown */}
+        <label className="flex flex-col">
+          Cake Flavor:
+          <select
+            name="cakeFlavor"
+            value={formData.cakeFlavor}
+            onChange={handleChange}
+            className="mt-1 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
-            Documentation
-          </a>
-        </div>
-      </main>
+            {CakeFlavors.map((flavor) => (
+              <option key={flavor} value={flavor}>
+                {flavor}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {/* Submit button */}
+        <button
+          type="submit"
+          className="mt-4 p-3 bg-indigo-500 text-white rounded hover:bg-indigo-600 transition-colors"
+        >
+          Save & Next
+        </button>
+      </form>
+       </div>
+      <button>Start Your Party</button>
     </div>
   );
 }
